@@ -8,21 +8,32 @@ from https://github.com/AvinashReddy3108/PaperplaneExtended . I hereby take no c
 than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtended/commits/master/userbot/modules/direct_links.py
 for original authorship. """
 
-from requests import get as rget, head as rhead, post as rpost, Session as rsession
-from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
-from urllib.parse import urlparse, unquote
-from json import loads as jsonloads
-from lk21 import Bypass
-from cfscrape import create_scraper
-from bs4 import BeautifulSoup
+import re
 from base64 import standard_b64encode
+from json import loads as jsonloads
+from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 from time import sleep
+from urllib.parse import urlparse, unquote
+
+from bs4 import BeautifulSoup
+from cfscrape import create_scraper
+from lk21 import Bypass
+from requests import get as rget, head as rhead, post as rpost, Session as rsession
 
 from bot import LOGGER, UPTOBOX_TOKEN
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
+
+
+def is_fembed_url(link: str, return_id=False):
+    match = re.search(
+        '^http(?:s*)\:\/\/(?:(?:[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.)+[a-zA-Z]{2,})\/(?:f|v|d)\/([a-zA-Z0-9-_]+)\/*$',
+        link)
+    if match is not None:
+        return match[1] if return_id else True
+    return False
 
 
 def direct_link_generator(link: str):
@@ -65,6 +76,8 @@ def direct_link_generator(link: str):
         return krakenfiles(link)
     elif 'upload.ee' in link:
         return uploadee(link)
+    elif is_fembed_url(link):
+        return fembed(link)
     elif any(x in link for x in fmed_list):
         return fembed(link)
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
