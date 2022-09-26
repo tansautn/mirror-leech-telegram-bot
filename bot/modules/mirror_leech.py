@@ -19,7 +19,15 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage
 from .listener import MirrorLeechListener
+import re
 
+def is_fembed_url(link: str, return_id=False):
+    match = re.search(
+        '^http(?:s*)\:\/\/(?:(?:[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.)+[a-zA-Z]{2,})\/(?:f|v|d)\/([a-zA-Z0-9-_]+)\/*$',
+        link)
+    if match is not None:
+        return match[1] if return_id else True
+    return False
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     mesg = message.text.split('\n')
@@ -70,7 +78,10 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         name = name.split(' pswd:')[0]
         name = name.strip()
     else:
-        name = ''
+        if is_fembed_url(link):
+            name=''
+        else:
+            name = ''
 
     link = re_split(r"pswd:|\|", link)[0]
     link = link.strip()
