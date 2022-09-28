@@ -214,6 +214,9 @@ Number should be always before |newname or pswd:
         Thread(target=add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener,
                                             ratio, seed_time)).start()
     else:
+        if link is dict and link['title'] and len(name) == 0:
+            name = link['title']
+            LOGGER.info(f"Set file name auto: {link['title']}")
         if len(mesg) > 1:
             ussr = mesg[1]
             if len(mesg) > 2:

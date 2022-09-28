@@ -1,1 +1,4 @@
-python3 update.py && python3 -m bot
+#!/bin/bash
+source ./venv/bin/activate
+nohup python3 -m bot &
+
