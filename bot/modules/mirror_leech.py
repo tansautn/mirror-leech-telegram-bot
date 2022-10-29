@@ -225,9 +225,9 @@ Number should be always before |newname or pswd:
         Thread(target=add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener,
                                             ratio, seed_time)).start()
     else:
-        if link is dict and len(link['title']) > 0 and len(name) == 0:
-            name = link['title']
-            link = link['link']
+        if ("title" in link) and (len(link['title']) > 0):
+            name = f"{link['title']}"
+            link = f"{link['link']}"
             LOGGER.info(f"Set file name auto: {name}")
         # if len(mesg) > 1:
         #     ussr = mesg[1]
@@ -246,7 +246,7 @@ Number should be always before |newname or pswd:
             link = f"{link['link']}"
         # LOGGER.info(type(link))
         # LOGGER.info(link.keys())
-        LOGGER.info("send link to aria : " + f"{link}")
+        LOGGER.info("send link to aria - name : " + f"{name}" + "--- " + f"{link}")
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,
                                                  auth, ratio, seed_time)).start()
 
