@@ -3,7 +3,6 @@ from re import match as re_match, split as re_split
 from threading import Thread
 from time import sleep, time
 
-from base64 import b64encode
 from requests import get as rget
 from telegram.ext import CommandHandler
 
@@ -36,8 +35,11 @@ def is_fembed_url(link: str, return_id=False):
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     mesg = message.text.split('\n')
+    LOGGER.info('mesg : ' + f"{mesg}")
     message_args = mesg[0].split(maxsplit=1)
+    LOGGER.info('mesg : ' + f"{message_args}")
     name_args = mesg[0].split('|', maxsplit=1)
+    LOGGER.info('mesg : ' + f"{name_args}")
     index = 1
     ratio = None
     seed_time = None
@@ -47,11 +49,14 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=3)
+        LOGGER.info('mesg[0] : ' + f"{mesg[0]}")
+        LOGGER.info('split(3) : ' + f"{args}")
         for x in args:
             x = x.strip()
+            LOGGER.info('x now is : ' + f"{x}")
             if x == 's':
-               select = True
-               index += 1
+                select = True
+                index += 1
             elif x == 'd':
                 seed = True
                 index += 1
@@ -63,6 +68,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 if len(dargs) == 3:
                     seed_time = dargs[2] if dargs[2] else None
             elif x.isdigit():
+                LOGGER.info('multi ON, value = x')
                 multi = int(x)
                 mi = index
         if multi == 0:
@@ -219,22 +225,28 @@ Number should be always before |newname or pswd:
         Thread(target=add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener,
                                             ratio, seed_time)).start()
     else:
-        if len(link['title']) > 0 and len(name) == 0:
+        if link is dict and len(link['title']) > 0 and len(name) == 0:
             name = link['title']
             link = link['link']
             LOGGER.info(f"Set file name auto: {name}")
-        if len(mesg) > 1:
-            ussr = mesg[1]
-            if len(mesg) > 2:
-                pssw = mesg[2]
-            else:
-                pssw = ''
-            auth = f"{ussr}:{pssw}"
-            auth = "Basic " + b64encode(auth.encode()).decode('ascii')
-        else:
-            auth = ''
-
-        link = link['link'] if link is dict and len(link['link']) else link
+        # if len(mesg) > 1:
+        #     ussr = mesg[1]
+        #     if len(mesg) > 2:
+        #         pssw = mesg[2]
+        #     else:
+        #         pssw = ''
+        #     auth = f"{ussr}:{pssw}"
+        #     auth = "Basic " + b64encode(auth.encode()).decode('ascii')
+        # else:
+        auth = ''
+        # LOGGER.info(type(link))
+        # LOGGER.info(link.keys())
+        # LOGGER.info(link["link"])
+        if (link is dict):
+            link = f"{link['link']}"
+        # LOGGER.info(type(link))
+        # LOGGER.info(link.keys())
+        LOGGER.info("send link to aria : " + f"{link}")
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,
                                                  auth, ratio, seed_time)).start()
 

@@ -164,8 +164,9 @@ def start_listener():
                                   on_bt_download_complete=__onBtDownloadComplete,
                                   timeout=60)
 
-def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_time):
-    args = {'dir': path, 'max-upload-limit': '1K'}
+def add_aria2c_download(link, path, listener, filename, auth, ratio, seed_time):
+    args = {'dir': path, 'max-upload-limit': '1K', 'max-connection-per-server': 16, 'min-split-size': "120M",
+            'split': 8}
     if filename:
         args['out'] = filename
     if auth:
@@ -174,10 +175,14 @@ def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_t
         args['seed-ratio'] = ratio
     if seed_time:
         args['seed-time'] = seed_time
+    # print('in listener')
+    # print(link)
+    # print(type(link))
+    # print(len(link))
     if is_magnet(str(link)):
-        download = aria2.add_magnet(link, args)
+        download = aria2.add_magnet(link['link'] if "link" in link else str(link), args)
     else:
-        download = aria2.add_uris([link], args)
+        download = aria2.add_uris([link['link'] if "link" in link else str(link)], args)
     if download.error_message:
         error = str(download.error_message).replace('<', ' ').replace('>', ' ')
         LOGGER.info(f"Download Error: {error}")
@@ -188,5 +193,6 @@ def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_t
     listener.onDownloadStart()
     if not listener.select:
         sendStatusMessage(listener.message, listener.bot)
+
 
 start_listener()

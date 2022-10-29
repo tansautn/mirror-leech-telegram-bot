@@ -1,18 +1,20 @@
-from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
-from socket import setdefaulttimeout
 from faulthandler import enable as faulthandler_enable
-from telegram.ext import Updater as tgUpdater
-from qbittorrentapi import Client as qbClient
-from aria2p import API as ariaAPI, Client as ariaClient
-from os import remove as osremove, path as ospath, environ
-from requests import get as rget
 from json import loads as jsonloads
-from subprocess import Popen, run as srun, check_output
-from time import sleep, time
+from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, \
+    warning as log_warning
+from os import remove as osremove, path as ospath, environ
+from socket import setdefaulttimeout
+from subprocess import Popen, run as srun
 from threading import Thread, Lock
+from time import sleep, time
+
+from aria2p import API as ariaAPI, Client as ariaClient
+from asyncio import get_event_loop
 from dotenv import load_dotenv
 from pyrogram import Client, enums
-from asyncio import get_event_loop
+from qbittorrentapi import Client as qbClient
+from requests import get as rget
+from telegram.ext import Updater as tgUpdater
 
 main_loop = get_event_loop()
 
@@ -47,10 +49,11 @@ if len(SERVER_PORT) == 0:
     SERVER_PORT = 80
 
 Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)
-srun(["qbittorrent-nox", "-d", "--profile=."])
+# srun(["qbittorrent-nox", "-d", "--profile=."])
+srun(["qbittorrent-nox", "--profile=."])
 if not ospath.exists('.netrc'):
     srun(["touch", ".netrc"])
-srun(["cp", ".netrc", "/root/.netrc"])
+# srun(["cp", ".netrc", "/root/.netrc"])
 srun(["chmod", "600", ".netrc"])
 srun(["chmod", "+x", "aria.sh"])
 srun("./aria.sh", shell=True)

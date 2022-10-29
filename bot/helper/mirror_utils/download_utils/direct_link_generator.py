@@ -215,7 +215,7 @@ def fembed(link: str, get_file_name=False):
     count = len(dl_url)
     lst_link = [dl_url[i] for i in dl_url]
     if get_file_name:
-        return {"title": dl_url['title'] if "title" in dl_url else None, "link": lst_link[count - 1]}
+        return dict({"title": dl_url['title'] if ("title" in dl_url) else None, "link": f"{lst_link[-1]}"})
     return lst_link[count - 1]
 
 
