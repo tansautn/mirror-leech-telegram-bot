@@ -1,18 +1,22 @@
-from base64 import b64encode
-from re import match as re_match, split as re_split
 from os import path as ospath
-from time import sleep, time
+from re import match as re_match, split as re_split
 from threading import Thread
-from telegram.ext import CommandHandler
-from requests import get as rget
+from time import sleep, time
 
+from base64 import b64encode
+from requests import get as rget
+from telegram.ext import CommandHandler
+
+from bot import MEGA_API_KEY
 from bot import dispatcher, DOWNLOAD_DIR, LOGGER
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
 from bot.helper.mirror_utils.download_utils.qbit_downloader import add_qb_torrent
-from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
+
+if None != MEGA_API_KEY and "None" != MEGA_API_KEY:
+    from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -20,6 +24,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage
 from .listener import MirrorLeechListener
 import re
+
 
 def is_fembed_url(link: str, return_id=False):
     match = re.search(
@@ -214,9 +219,10 @@ Number should be always before |newname or pswd:
         Thread(target=add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener,
                                             ratio, seed_time)).start()
     else:
-        if link is dict and link['title'] and len(name) == 0:
+        if len(link['title']) > 0 and len(name) == 0:
             name = link['title']
-            LOGGER.info(f"Set file name auto: {link['title']}")
+            link = link['link']
+            LOGGER.info(f"Set file name auto: {name}")
         if len(mesg) > 1:
             ussr = mesg[1]
             if len(mesg) > 2:
@@ -227,6 +233,8 @@ Number should be always before |newname or pswd:
             auth = "Basic " + b64encode(auth.encode()).decode('ascii')
         else:
             auth = ''
+
+        link = link['link'] if link is dict and len(link['link']) else link
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,
                                                  auth, ratio, seed_time)).start()
 
