@@ -206,7 +206,7 @@ def letsupload(url: str) -> str:
     return Bypass().bypass_url(link)
 
 
-def fembed(link: str, get_file_name=False):
+def fembed(link: str, get_file_name = False):
     """ Fembed direct link generator
     Based on https://github.com/zevtyardt/lk21
     """

@@ -2,7 +2,10 @@ from random import SystemRandom
 from string import ascii_letters, digits
 from os import makedirs
 from threading import Event
-from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
+from bot import MEGA_API_KEY
+print(MEGA_API_KEY)
+if None != MEGA_API_KEY and "None" != MEGA_API_KEY:
+    from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 
 from bot import LOGGER, MEGA_API_KEY, download_dict_lock, download_dict, MEGA_EMAIL_ID, MEGA_PASSWORD, STOP_DUPLICATE
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendFile

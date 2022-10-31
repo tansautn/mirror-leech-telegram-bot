@@ -34,7 +34,15 @@ def is_fembed_url(link: str, return_id=False):
     return False
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
-    mesg = message.text.split('\n')
+    try:
+        mesg = message.text.split('\n')
+    except AttributeError as e:
+        print('exception in _mirror_leech')
+        print('update:')
+        print(message)
+        print('context:')
+        print(bot)
+        raise e
     LOGGER.info('mesg : ' + f"{mesg}")
     message_args = mesg[0].split(maxsplit=1)
     LOGGER.info('mesg : ' + f"{message_args}")
@@ -72,15 +80,30 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 multi = int(x)
                 mi = index
         if multi == 0:
+            print('mesg[0]')
+            print(mesg[0])
+            print(mesg[0].split(maxsplit=index))
+            print('index')
+            print(index)
             message_args = mesg[0].split(maxsplit=index)
+
             if len(message_args) > index:
                 link = message_args[index].strip()
                 if link.startswith(("|", "pswd:")):
                     link = ''
             else:
                 link = ''
-        else:
-            link = ''
+        # else:
+        #     # link = link if link and len(link) else ''
+        #     first_line = mesg[multi - 1].split(maxsplit=mi+1)
+        #     for str_value in first_line:
+        #         if is_url(str_value) or is_magnet(str_value):
+        #             link = str(str_value).strip()
+        #             multi = multi -1
+        #             mesg = mesg[0: multi - 1]
+        #             print('first link ok')
+        #             print(link)
+        #             break
     else:
         link = ''
 
@@ -89,10 +112,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         name = name.split(' pswd:')[0]
         name = name.strip()
     else:
-        if is_fembed_url(link):
-            name=''
-        else:
-            name = ''
+        name = ''
 
     link = re_split(r"pswd:|\|", link)[0]
     link = link.strip()
@@ -139,6 +159,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             else:
                 link = file_.get_file().file_path
 
+# Try fix multi
+    # if multi == 0 and not is_url(link) and not is_magnet(link):
     if not is_url(link) and not is_magnet(link):
         help_msg = '''
 <code>/cmd</code> link |newname pswd: xx(zip/unzip)
@@ -250,6 +272,7 @@ Number should be always before |newname or pswd:
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,
                                                  auth, ratio, seed_time)).start()
 
+    #Origin
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -259,6 +282,25 @@ Number should be always before |newname or pswd:
         nextmsg.from_user.id = message.from_user.id
         sleep(4)
         Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
+
+#Try fix multi
+    # if multi > 1:
+    #     print('tele message')
+    #     print(message)
+    #     sleep(4)
+    #     msg_id = message.reply_to_message.message_id if message.reply_to_message else message.message_id
+    #     # msg_id = message.reply_to_message.message_id + 1 if message.reply_to_message else message.message_id + 1
+    #     nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': msg_id})
+    #     msg = message.text.split(maxsplit=mi+1)
+    #     # print('mi = '+ mi + ', max_split= ' + mi+1)
+    #     msg[mi] = f"{multi - 1}"
+    #     print('msg, nextmsg')
+    #     print(msg)
+    #     nextmsg = sendMessage(" ".join(msg), bot, nextmsg)
+    #     print(nextmsg)
+    #     nextmsg.from_user.id = message.from_user.id
+    #     sleep(4)
+    #     Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
 
 
 def mirror(update, context):
