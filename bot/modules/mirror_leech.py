@@ -1,30 +1,53 @@
-from base64 import b64encode
-from re import match as re_match, split as re_split
 from os import path as ospath
-from time import sleep, time
+from re import match as re_match, split as re_split
 from threading import Thread
-from telegram.ext import CommandHandler
-from requests import get as rget
+from time import sleep, time
 
+from requests import get as rget
+from telegram.ext import CommandHandler
+
+from bot import MEGA_API_KEY
 from bot import dispatcher, DOWNLOAD_DIR, LOGGER
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
 from bot.helper.mirror_utils.download_utils.qbit_downloader import add_qb_torrent
-from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
+
+if None != MEGA_API_KEY and "None" != MEGA_API_KEY:
+    from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage
 from .listener import MirrorLeechListener
+import re
 
+
+def is_fembed_url(link: str, return_id=False):
+    match = re.search(
+        '^http(?:s*)\:\/\/(?:(?:[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.)+[a-zA-Z]{2,})\/(?:f|v|d)\/([a-zA-Z0-9-_]+)\/*$',
+        link)
+    if match is not None:
+        return match[1] if return_id else True
+    return False
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
-    mesg = message.text.split('\n')
+    try:
+        mesg = message.text.split('\n')
+    except AttributeError as e:
+        print('exception in _mirror_leech')
+        print('update:')
+        print(message)
+        print('context:')
+        print(bot)
+        raise e
+    LOGGER.info('mesg : ' + f"{mesg}")
     message_args = mesg[0].split(maxsplit=1)
+    LOGGER.info('mesg : ' + f"{message_args}")
     name_args = mesg[0].split('|', maxsplit=1)
+    LOGGER.info('mesg : ' + f"{name_args}")
     index = 1
     ratio = None
     seed_time = None
@@ -34,11 +57,14 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=3)
+        LOGGER.info('mesg[0] : ' + f"{mesg[0]}")
+        LOGGER.info('split(3) : ' + f"{args}")
         for x in args:
             x = x.strip()
+            LOGGER.info('x now is : ' + f"{x}")
             if x == 's':
-               select = True
-               index += 1
+                select = True
+                index += 1
             elif x == 'd':
                 seed = True
                 index += 1
@@ -50,18 +76,34 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 if len(dargs) == 3:
                     seed_time = dargs[2] if dargs[2] else None
             elif x.isdigit():
+                LOGGER.info('multi ON, value = x')
                 multi = int(x)
                 mi = index
         if multi == 0:
+            print('mesg[0]')
+            print(mesg[0])
+            print(mesg[0].split(maxsplit=index))
+            print('index')
+            print(index)
             message_args = mesg[0].split(maxsplit=index)
+
             if len(message_args) > index:
                 link = message_args[index].strip()
                 if link.startswith(("|", "pswd:")):
                     link = ''
             else:
                 link = ''
-        else:
-            link = ''
+        # else:
+        #     # link = link if link and len(link) else ''
+        #     first_line = mesg[multi - 1].split(maxsplit=mi+1)
+        #     for str_value in first_line:
+        #         if is_url(str_value) or is_magnet(str_value):
+        #             link = str(str_value).strip()
+        #             multi = multi -1
+        #             mesg = mesg[0: multi - 1]
+        #             print('first link ok')
+        #             print(link)
+        #             break
     else:
         link = ''
 
@@ -117,6 +159,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             else:
                 link = file_.get_file().file_path
 
+# Try fix multi
+    # if multi == 0 and not is_url(link) and not is_magnet(link):
     if not is_url(link) and not is_magnet(link):
         help_msg = '''
 <code>/cmd</code> link |newname pswd: xx(zip/unzip)
@@ -203,19 +247,32 @@ Number should be always before |newname or pswd:
         Thread(target=add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener,
                                             ratio, seed_time)).start()
     else:
-        if len(mesg) > 1:
-            ussr = mesg[1]
-            if len(mesg) > 2:
-                pssw = mesg[2]
-            else:
-                pssw = ''
-            auth = f"{ussr}:{pssw}"
-            auth = "Basic " + b64encode(auth.encode()).decode('ascii')
-        else:
-            auth = ''
+        if ("title" in link) and (len(link['title']) > 0):
+            name = f"{link['title']}"
+            link = f"{link['link']}"
+            LOGGER.info(f"Set file name auto: {name}")
+        # if len(mesg) > 1:
+        #     ussr = mesg[1]
+        #     if len(mesg) > 2:
+        #         pssw = mesg[2]
+        #     else:
+        #         pssw = ''
+        #     auth = f"{ussr}:{pssw}"
+        #     auth = "Basic " + b64encode(auth.encode()).decode('ascii')
+        # else:
+        auth = ''
+        # LOGGER.info(type(link))
+        # LOGGER.info(link.keys())
+        # LOGGER.info(link["link"])
+        if (link is dict):
+            link = f"{link['link']}"
+        # LOGGER.info(type(link))
+        # LOGGER.info(link.keys())
+        LOGGER.info("send link to aria - name : " + f"{name}" + "--- " + f"{link}")
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,
                                                  auth, ratio, seed_time)).start()
 
+    #Origin
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -225,6 +282,25 @@ Number should be always before |newname or pswd:
         nextmsg.from_user.id = message.from_user.id
         sleep(4)
         Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
+
+#Try fix multi
+    # if multi > 1:
+    #     print('tele message')
+    #     print(message)
+    #     sleep(4)
+    #     msg_id = message.reply_to_message.message_id if message.reply_to_message else message.message_id
+    #     # msg_id = message.reply_to_message.message_id + 1 if message.reply_to_message else message.message_id + 1
+    #     nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': msg_id})
+    #     msg = message.text.split(maxsplit=mi+1)
+    #     # print('mi = '+ mi + ', max_split= ' + mi+1)
+    #     msg[mi] = f"{multi - 1}"
+    #     print('msg, nextmsg')
+    #     print(msg)
+    #     nextmsg = sendMessage(" ".join(msg), bot, nextmsg)
+    #     print(nextmsg)
+    #     nextmsg.from_user.id = message.from_user.id
+    #     sleep(4)
+    #     Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
 
 
 def mirror(update, context):

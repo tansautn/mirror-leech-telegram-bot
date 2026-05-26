@@ -200,43 +200,44 @@ def __onDownloadComplete(client, tor):
         __remove_torrent(client, tor.hash)
 
 def __qb_listener():
-    client = get_client()
-    with qb_download_lock:
-        if len(client.torrents_info()) == 0:
-            QbInterval[0].cancel()
-            QbInterval.clear()
-            return
-        try:
-            for tor_info in client.torrents_info():
-                if tor_info.state == "metaDL":
-                    STALLED_TIME[tor_info.hash] = time()
-                    if TORRENT_TIMEOUT is not None and time() - tor_info.added_on >= TORRENT_TIMEOUT:
-                        Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
-                elif tor_info.state == "downloading":
-                    STALLED_TIME[tor_info.hash] = time()
-                    if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
-                        STOP_DUP_CHECK.add(tor_info.hash)
-                        __stop_duplicate(client, tor_info)
-                elif tor_info.state == "stalledDL":
-                    if tor_info.hash not in RECHECKED and 0.99989999999999999 < tor_info.progress < 1:
-                        msg = f"Force recheck - Name: {tor_info.name} Hash: "
-                        msg += f"{tor_info.hash} Downloaded Bytes: {tor_info.downloaded} "
-                        msg += f"Size: {tor_info.size} Total Size: {tor_info.total_size}"
-                        LOGGER.error(msg)
-                        client.torrents_recheck(torrent_hashes=tor_info.hash)
-                        RECHECKED.add(tor_info.hash)
-                    elif TORRENT_TIMEOUT is not None and time() - STALLED_TIME[tor_info.hash] >= TORRENT_TIMEOUT:
-                        Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
-                elif tor_info.state == "missingFiles":
-                    client.torrents_recheck(torrent_hashes=tor_info.hash)
-                elif tor_info.state == "error":
-                    Thread(target=__onDownloadError, args=("No enough space for this torrent on device", client, tor_info)).start()
-                elif (tor_info.completion_on != 0 or tor_info.state.endswith("UP") or tor_info.state == "uploading") \
-                      and tor_info.hash not in UPLOADED and tor_info.state not in ['checkingUP', 'checkingDL']:
-                    UPLOADED.add(tor_info.hash)
-                    __onDownloadComplete(client, tor_info)
-                elif tor_info.state in ['pausedUP', 'pausedDL'] and tor_info.hash in SEEDING:
-                    SEEDING.remove(tor_info.hash)
-                    __onSeedFinish(client, tor_info)
-        except Exception as e:
-            LOGGER.error(str(e))
+    return
+    # client = get_client()
+    # with qb_download_lock:
+    #     if len(client.torrents_info()) == 0:
+    #         QbInterval[0].cancel()
+    #         QbInterval.clear()
+    #         return
+    #     try:
+    #         for tor_info in client.torrents_info():
+    #             if tor_info.state == "metaDL":
+    #                 STALLED_TIME[tor_info.hash] = time()
+    #                 if TORRENT_TIMEOUT is not None and time() - tor_info.added_on >= TORRENT_TIMEOUT:
+    #                     Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
+    #             elif tor_info.state == "downloading":
+    #                 STALLED_TIME[tor_info.hash] = time()
+    #                 if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
+    #                     STOP_DUP_CHECK.add(tor_info.hash)
+    #                     __stop_duplicate(client, tor_info)
+    #             elif tor_info.state == "stalledDL":
+    #                 if tor_info.hash not in RECHECKED and 0.99989999999999999 < tor_info.progress < 1:
+    #                     msg = f"Force recheck - Name: {tor_info.name} Hash: "
+    #                     msg += f"{tor_info.hash} Downloaded Bytes: {tor_info.downloaded} "
+    #                     msg += f"Size: {tor_info.size} Total Size: {tor_info.total_size}"
+    #                     LOGGER.error(msg)
+    #                     client.torrents_recheck(torrent_hashes=tor_info.hash)
+    #                     RECHECKED.add(tor_info.hash)
+    #                 elif TORRENT_TIMEOUT is not None and time() - STALLED_TIME[tor_info.hash] >= TORRENT_TIMEOUT:
+    #                     Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
+    #             elif tor_info.state == "missingFiles":
+    #                 client.torrents_recheck(torrent_hashes=tor_info.hash)
+    #             elif tor_info.state == "error":
+    #                 Thread(target=__onDownloadError, args=("No enough space for this torrent on device", client, tor_info)).start()
+    #             elif (tor_info.completion_on != 0 or tor_info.state.endswith("UP") or tor_info.state == "uploading") \
+    #                   and tor_info.hash not in UPLOADED and tor_info.state not in ['checkingUP', 'checkingDL']:
+    #                 UPLOADED.add(tor_info.hash)
+    #                 __onDownloadComplete(client, tor_info)
+    #             elif tor_info.state in ['pausedUP', 'pausedDL'] and tor_info.hash in SEEDING:
+    #                 SEEDING.remove(tor_info.hash)
+    #                 __onSeedFinish(client, tor_info)
+    #     except Exception as e:
+    #         LOGGER.error(str(e))

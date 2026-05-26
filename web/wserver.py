@@ -6,7 +6,7 @@ from flask import Flask, request
 
 from web.nodes import make_tree
 
-app = Flask(__name__)
+#app = Flask(__name__)
 
 aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 

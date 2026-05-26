@@ -8,7 +8,15 @@ from bot.helper.ext_utils.db_handler import DbManger
 
 def authorize(update, context):
     user_id = ""
-    reply_message = update.message.reply_to_message
+    try:
+        reply_message = update.message.reply_to_message
+    except AttributeError as e:
+        print('exception in authorize')
+        print('update:')
+        print(update)
+        print('context:')
+        print(context)
+        raise e
     if len(context.args) == 1:
         user_id = int(context.args[0])
     elif reply_message:
